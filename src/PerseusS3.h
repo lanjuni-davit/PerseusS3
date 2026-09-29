@@ -33,10 +33,10 @@ public:
     // Returns -1 for an invalid index.
     int16_t readLineSensor(uint8_t index);
 
-    // Compatibility with existing sketches. reverse*() enables inversion;
-    // repeated calls do not toggle it. Use set*Inverted(false) to clear it.
-    void reverseLeft() { setLeftInverted(true); }
-    void reverseRight() { setRightInverted(true); }
+    // Toggle logical inversion on every call; takes effect on the next run.
+    // Two calls restore the previous inversion setting.
+    void reverseLeft() { setLeftInverted(!leftInverted); }
+    void reverseRight() { setRightInverted(!rightInverted); }
     void linebegin(uint8_t s0 = 36, uint8_t s1 = 35, uint8_t s2 = 34, uint8_t s3 = 33, uint8_t inputPin = 7) {
         beginLineSensors(s0, s1, s2, s3, inputPin);
     }
@@ -45,6 +45,10 @@ public:
 private:
     bool leftInverted = true;
     bool rightInverted = false;
+
+    // Leave a motor disabled if its PWM initialization failed.
+    bool leftReady = false;
+    bool rightReady = false;
 
     // Last DIR levels, including while PWM is zero.
     bool leftDirectionHigh = false;

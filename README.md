@@ -1,246 +1,161 @@
-![Perseus S3](Images/PerseusForge.png)
+![PerseusS3](https://raw.githubusercontent.com/lanjuni-davit/PerseusS3/master/Images/PerseusForge.png)
 
 # PerseusS3
 
-**PerseusS3** is a compact ESP32-S3-based robotics development board designed for mobile robots, educational robotics, and robotics competitions.
+Arduino library for the **PerseusS3 robotics development board**, based on the
+ESP32-S3. It provides signed PWM motor control, direction inversion, and readings
+from a 12-channel analog line-sensor interface.
 
-It combines an ESP32-S3 controller, two high-current brushed DC motor drivers, a 12-channel line-sensor interface, power regulation, wireless connectivity, and USB programming on a single board.
-
-The accompanying Arduino library provides a simple API for controlling the board hardware.
-
----
-
-## Hardware Overview
+## Hardware overview
 
 | Specification | PerseusS3 |
 |---|---|
-| MCU | ESP32-S3-MINI-1U-N8 |
+| MCU module | ESP32-S3-MINI-1U-N8 |
 | CPU | Dual-core Xtensa LX7, up to 240 MHz |
 | Flash | 8 MB |
-| Wireless | 2.4 GHz Wi-Fi + Bluetooth Low Energy |
-| Logic voltage | 3.3 V |
-| Board input voltage | 4–35 V |
+| Wireless | 2.4 GHz Wi-Fi and Bluetooth Low Energy |
+| GPIO logic level | 3.3 V |
+| Specified board input voltage | 4–35 V |
 | On-board regulator | 3.3 V, up to 2 A |
-| Motor channels | 2 brushed DC motors |
-| Motor driver | MP6612D |
-| Continuous driver current | Up to 5 A per motor driver |
-| OCP threshold | 14.5 A |
-| USB | USB Type-C |
-| Board dimensions | approximately 80 × 27 × 9.9 mm |
-| Framework | Arduino / ESP32 |
+| Motor channels | Two brushed DC motors |
+| Motor drivers | MP6612D |
+| Line-sensor channels used by the library | 12, indexed 0–11 |
+| USB connector | USB Type-C |
+| Approximate dimensions | 80 × 27 × 9.9 mm |
+| Framework | Arduino for ESP32 |
 
-> **Warning:** PerseusS3 uses 3.3 V logic. Do not apply more than 3.3 V directly to ESP32-S3 GPIO pins.
+The MP6612D is rated for up to **5 A continuous current per driver under suitable
+electrical and thermal conditions**. Actual board capability depends on cooling,
+PCB design, ambient temperature and motor load. Its **14.5 A minimum over-current
+threshold with OC_ADJ connected to GND** is a protection threshold, not a usable
+continuous-current rating.
 
----
-
-## ESP32-S3 Controller
-
-PerseusS3 is based on the **ESP32-S3-MINI-1U-N8** module.
-
-The ESP32-S3 provides a dual-core processor running at up to **240 MHz**, together with integrated Wi-Fi and Bluetooth Low Energy connectivity.
-
-The MCU provides the processing capability required for real-time robotics applications while supporting common embedded interfaces such as:
-
-UART, SPI, I²C, PWM, ADC, timers, USB, and general-purpose GPIO.
-
-The PerseusS3 library handles board-specific hardware such as the motor drivers and line-sensor multiplexer while other ESP32-S3 peripherals can still be accessed through the standard Arduino ESP32 API.
-
----
-
-# Motor System
-
-PerseusS3 includes **two independent brushed DC motor channels**.
-
-Each motor is controlled by an **MP6612D full H-bridge motor driver**.
-
-The motor channels are identified as:
-
-```text
-Left Motor
-Right Motor
-```
-
-### Motor GPIO Assignments
-
-| Signal | Left Motor | Right Motor |
-|---|---:|---:|
-| EN / PWM | GPIO 11 | GPIO 15 |
-| DIR | GPIO 10 | GPIO 14 |
-| SLP | GPIO 12 | GPIO 13 |
-
----
-
-## MP6612D Motor Driver
-
-The **MP6612D** is a high-current H-bridge driver designed for reversible brushed DC motors.
-
-The IC supports up to **5 A of continuous driver current** under suitable electrical and thermal conditions.
-
-PerseusS3 itself is designed for a board input voltage of **4–35 V**.
-
-### Motor Driver Electrical Characteristics
-
-| Parameter | Value |
-|---|---:|
-| Driver | MP6612D |
-| PerseusS3 board input | 4–35 V |
-| Continuous driver current | Up to 5 A |
-| High-side MOSFET RDS(ON) | 70 mΩ typical |
-| Low-side MOSFET RDS(ON) | 45 mΩ typical |
-| Typical active-path resistance | ~115 mΩ |
-| External PWM capability | Up to 100 kHz |
-| PerseusS3 PWM frequency | 20 kHz |
-| OCP threshold | 14.5 A |
-| OCP retry time | approximately 4 ms |
-
-### Continuous Current
-
-The MP6612D is rated for up to **5 A continuous output current**.
-
-Actual continuous current capability depends on operating conditions including PCB thermal design, airflow, ambient temperature, motor duty cycle, and supply voltage.
-
-The **5 A specification is the continuous driver-current rating and should not be confused with the over-current protection threshold**.
-
-### Over-Current Protection
-
-The MP6612D contains internal short-circuit and over-current protection.
-The **14.5 A value is a protection threshold, not a continuous or recommended operating current**.
-
-### Integrated Protection
-
-The MP6612D provides hardware protection against over-current, over-temperature, under-voltage, and over-voltage conditions.
-
-It also includes internal current sensing and cycle-by-cycle current regulation without requiring an external low-resistance current-shunt resistor.
-
----
-
-## Motor PWM
-
-The PerseusS3 library configures both motor channels for:
-
-```text
-PWM frequency: 20 kHz
-PWM resolution: 8 bit
-Command range: -255 ... +255
-```
-
-Motor commands are signed.
-
-```text
-+255    Maximum power in one direction
-   0    Electrical brake
--255    Maximum power in the opposite direction
-```
-
-Values outside the supported range are automatically clamped to `-255...255`.
-
----
-
-## Safe Direction Changes
-
-The library removes motor PWM before changing the `DIR` signal.
-
-This prevents a direction transition from occurring while a previous PWM pulse may still be active.
-
-The sequence is approximately:
-
-```text
-PWM -> 0
-Wait for PWM settling
-Change DIR
-Apply new PWM
-```
-
-This delay is intended for electrical signal settling.
-
-It does **not** guarantee that a moving motor has mechanically stopped before reversing direction.
-
----
-
-# Arduino Library
-
-The PerseusS3 Arduino library provides an API for:
-
-Motor control, motor direction inversion, 12-channel line-sensor reading, configurable ADC resolution, and custom line-sensor GPIO assignments.
-
----
+Keep ESP32-S3 GPIO signals within **3.3 V** and share ground between the board,
+line sensors and multiplexer. The board's specified 4–35 V supply range is
+different from the voltage limits of its individual components.
 
 ## Installation
 
 ### Arduino IDE
 
-1. Install **ESP32 by Espressif Systems** from Arduino Boards Manager.
-2. Download this repository as a ZIP.
-3. Open Arduino IDE.
-4. Go to **Sketch > Include Library > Add .ZIP Library**.
-5. Select the downloaded ZIP file.
-
-Then include the library:
+1. Install **esp32 by Espressif Systems** through Boards Manager.
+2. Download the library ZIP and use **Sketch > Include Library > Add .ZIP Library**.
+3. Select the appropriate ESP32-S3 board profile and its flash/USB settings.
+   The module documented above has 8 MB flash.
+4. Include the library in your sketch:
 
 ```cpp
+#include <Arduino.h>
 #include <PerseusS3.h>
 ```
 
+When replacing an older installation, avoid keeping multiple copies of the
+library in the Arduino libraries folder.
+
 ### PlatformIO
 
-Add the repository to `platformio.ini`:
+For a local installation, put the library folder at `lib/PerseusS3/` inside your
+PlatformIO project. Keep its `src/` folder and `library.properties` intact.
+
+This example configuration uses a generic ESP32-S3 profile with 8 MB flash:
+
+```ini
+[env:perseuss3]
+platform = espressif32@7.0.1
+board = esp32-s3-devkitc-1
+framework = arduino
+monitor_speed = 115200
+```
+
+This is a generic build profile, not a custom PerseusS3 board definition. Verify
+the board and USB settings against your hardware. Put your sketch in `src/main.cpp`
+and include both `Arduino.h` and `PerseusS3.h`.
+
+To fetch a copy from GitHub instead, add this to the environment:
 
 ```ini
 lib_deps =
     https://github.com/lanjuni-davit/PerseusS3.git
 ```
 
-Then include:
+Use a repository revision containing the implementation documented here. Avoid
+selecting an older remote copy while testing a corrected local copy. Pin a commit
+or tag when you need a reproducible dependency.
 
-```cpp
-#include <PerseusS3.h>
-```
+## ESP32 core compatibility
 
----
+PWM configuration selects the Arduino-ESP32 API at compile time:
 
-# Motor Control
+| ESP32 core | PWM setup | PWM updates |
+|---|---|---|
+| 2.x | `ledcSetup()` and `ledcAttachPin()` | `ledcWrite(channel, duty)` |
+| 3.x | `ledcAttach()` | `ledcWrite(pin, duty)` |
 
-Initialize both motor drivers:
+This selection depends on the installed **ESP32 core version**, regardless of
+whether you use Arduino IDE or PlatformIO.
 
-```cpp
-#include <Arduino.h>
-#include <PerseusS3.h>
+On core 2.x, motor control reserves **LEDC channels 0 and 1 and their shared
+timer**. On core 3.x, the core allocates channels automatically. Other code must
+not reconfigure the motor pins or their PWM timers after initialization.
 
-void setup() {
-    PerseusS3.beginLeft();
-    PerseusS3.beginRight();
-}
+### Verification status
 
-void loop() {
-}
-```
+| Check | Result |
+|---|---|
+| Library and both basic examples with real ESP32-S3 GCC and core 2.0.17 | Compiled into object files |
+| Direction-inversion example with core 2.0.17 | Compiled into an object file |
+| 2.x and 3.x API branches using test interfaces | Compiler checks passed |
+| Full Arduino-ESP32 3.x firmware build | Not yet verified |
+| Complete local PlatformIO build | Blocked by a local Windows compiler subprocess error |
+| Physical motor and sensor measurements | Still required |
 
-Run both motors:
+The included workflow defines example builds for cores 2.0.17, 3.0.7 and 3.3.12,
+plus regression tests. Those workflow runs and runtime tests are not claimed as
+completed by the checks above.
+
+## Motor control
+
+### Motor GPIO assignments
+
+| Signal | Left motor | Right motor |
+|---|---:|---:|
+| EN / PWM | GPIO 11 | GPIO 15 |
+| DIR | GPIO 10 | GPIO 14 |
+| SLP | GPIO 12 | GPIO 13 |
+
+Call `beginLeft()` and `beginRight()` before their respective run methods. The
+library configures **20 kHz PWM with 8-bit resolution** while holding each driver
+asleep, starts with zero duty, then wakes the driver.
+
+If PWM setup fails, the affected driver stays asleep, an error is logged, and
+run commands for that motor are ignored until initialization succeeds.
+
+### Signed PWM commands
 
 ```cpp
 PerseusS3.runLeft(150);
 PerseusS3.runRight(150);
-```
 
-Reverse both motors:
-
-```cpp
 PerseusS3.runLeft(-150);
 PerseusS3.runRight(-150);
-```
 
-Brake:
-
-```cpp
 PerseusS3.runLeft(0);
 PerseusS3.runRight(0);
 ```
 
-`0` applies electrical braking. It does not disable the motor driver or place the output into a coast state.
+- The accepted command range is **−255 to +255**; larger magnitudes are clamped.
+- The sign selects direction, after applying the motor's inversion setting.
+- The magnitude sets PWM duty. It does not specify a measured speed in RPM.
+- **Zero applies electrical braking**, keeps the last DIR level and leaves the
+  driver enabled.
+- Physical forward/backward motion depends on motor wiring and mounting.
 
----
+For a direction change, PWM is set to zero and the library waits **100 µs** before
+changing DIR and applying the new duty. This interval allows PWM to settle; it
+does not guarantee that a moving motor has mechanically stopped. Updating duty
+without changing direction does not add this delay.
 
-## Motor Example
+### Basic motor example
 
 ```cpp
 #include <Arduino.h>
@@ -252,306 +167,306 @@ void setup() {
 }
 
 void loop() {
-
-    // Forward
+    // One logical direction.
     PerseusS3.runLeft(150);
     PerseusS3.runRight(150);
     delay(2000);
 
-    // Brake
     PerseusS3.runLeft(0);
     PerseusS3.runRight(0);
     delay(1000);
 
-    // Reverse
+    // Opposite logical direction.
     PerseusS3.runLeft(-150);
     PerseusS3.runRight(-150);
     delay(2000);
 
-    // Brake
     PerseusS3.runLeft(0);
     PerseusS3.runRight(0);
     delay(1000);
 }
 ```
 
----
+## Direction inversion and reverse toggles
 
-# Motor Direction Inversion
+The default settings are **left inverted = true** and **right inverted = false**.
 
-Motors mounted on opposite sides of a robot are commonly mirrored mechanically.
-
-PerseusS3 allows each motor's logical direction to be changed in software.
+Use the setters to choose a specific state:
 
 ```cpp
-PerseusS3.setLeftInverted(true);
-PerseusS3.setRightInverted(true);
+PerseusS3.setLeftInverted(true);    // Enable left inversion.
+PerseusS3.setRightInverted(true);   // Enable right inversion.
+
+PerseusS3.setLeftInverted(false);   // Disable left inversion.
+PerseusS3.setRightInverted(false);  // Disable right inversion.
 ```
 
-Disable inversion:
+Repeatedly setting `true` keeps inversion enabled. Repeatedly setting `false`
+keeps it disabled.
 
-```cpp
-PerseusS3.setLeftInverted(false);
-PerseusS3.setRightInverted(false);
-```
-
-The current library configuration has the **left motor inverted by default**.
-
-For compatibility with older sketches:
+Use the reverse methods to **toggle the current state on every call**:
 
 ```cpp
 PerseusS3.reverseLeft();
 PerseusS3.reverseRight();
 ```
 
-These functions enable inversion.
+| Before a reverse call | After the call |
+|---|---|
+| Inversion disabled (`false`) | Inversion enabled (`true`) |
+| Inversion enabled (`true`) | Inversion disabled (`false`) |
 
-They do not toggle the direction back when called a second time.
+Both setters and toggles take effect on the **next run command**. They do not
+immediately change an already-running motor. Calling the same reverse method
+twice restores its previous inversion setting. If both calls occur before the
+next run command, the motor sees no direction change from those two toggles.
 
----
+### Inversion example
 
-# Line Sensor System
+This demonstration explicitly starts with inversion disabled on both motors.
+It uses the same positive PWM command throughout:
 
-PerseusS3 supports up to **12 analog line sensors** through a multiplexer-based sensor interface.
+```cpp
+#include <Arduino.h>
+#include <PerseusS3.h>
 
-Instead of requiring twelve separate ADC pins, the multiplexer connects one selected sensor at a time to the ESP32-S3 ADC input.
+void runThenBrake() {
+    PerseusS3.runLeft(100);
+    PerseusS3.runRight(100);
+    delay(1000);
 
-### Default Line Sensor GPIO
+    PerseusS3.runLeft(0);
+    PerseusS3.runRight(0);
+    delay(500);
+}
 
-| Signal | GPIO |
-|---|---:|
-| S0 | 36 |
-| S1 | 35 |
-| S2 | 34 |
-| S3 | 33 |
-| ADC input | 7 |
+void setup() {
+    PerseusS3.beginLeft();
+    PerseusS3.beginRight();
+    PerseusS3.setLeftInverted(false);
+    PerseusS3.setRightInverted(false);
+}
 
-The selector pins determine which sensor channel is connected to the ADC input.
+void loop() {
+    runThenBrake();  // Original directions.
 
-Valid line-sensor indexes are:
+    PerseusS3.reverseLeft();   // false -> true
+    PerseusS3.reverseRight();  // false -> true
+    runThenBrake();            // Opposite directions.
 
-```text
-0 ... 11
+    PerseusS3.reverseLeft();   // true -> false
+    PerseusS3.reverseRight();  // true -> false
+    runThenBrake();            // Original directions again.
+}
 ```
 
----
+## Line-sensor wiring
 
-## Initialize Line Sensors
+The multiplexer connects one sensor at a time to the ESP32 ADC. The library
+reads **channels 0–11**. An invalid index returns `-1` without changing the
+selector pins or reading the ADC.
 
-Use the default PerseusS3 configuration:
+### Default pins used by the library
+
+| Multiplexer signal | ESP32 GPIO / connection |
+|---|---|
+| S0 | GPIO 36 |
+| S1 | GPIO 35 |
+| S2 | GPIO 34 |
+| S3 | GPIO 33 |
+| Common analog output to ADC | GPIO 7 |
+| E / EN, active LOW | Connect to GND for continuous operation |
+| GND | Common ground with ESP32 and sensors |
+
+**Do not leave the multiplexer E/EN pin floating.** LOW enables the selected
+channel; HIGH disconnects all channels. An unconnected enable input can disable
+the signal path unpredictably and leave the ADC input floating. This can produce
+large jumps even when the sensors are stationary.
+
+The library has no multiplexer-enable GPIO argument. For continuous operation,
+connect E/EN to GND with power off. If your design controls enable through an
+ESP32 GPIO, configure and drive that GPIO LOW in your sketch before reading.
+The multiplexer E/EN pin is separate from the motor-driver EN/PWM pins.
+
+### Initialization
+
+Use the defaults when they match your wiring:
 
 ```cpp
 PerseusS3.beginLineSensors();
 ```
 
-Custom pins can also be provided:
+For different wiring, the argument order is **S0, S1, S2, S3, ADC input**:
 
 ```cpp
-PerseusS3.beginLineSensors(
-    37,
-    36,
-    35,
-    34,
-    4
-);
+// Example custom wiring only; use your actual GPIO numbers.
+PerseusS3.beginLineSensors(37, 36, 35, 34, 4);
 ```
 
-The arguments are:
+The library cannot detect which GPIO is physically connected to each selector.
+Verify these connections against the board schematic or mux pins.
 
-```text
-S0
-S1
-S2
-S3
-ADC input
-```
+### Channel selection order
 
----
+The following columns are in **S0, S1, S2, S3** order. S0 has weight 1, S1 weight
+2, S2 weight 4 and S3 weight 8. Every row requires E/EN to be LOW.
 
-## Read a Line Sensor
+| Channel | S0 | S1 | S2 | S3 |
+|---:|---:|---:|---:|---:|
+| 0 | 0 | 0 | 0 | 0 |
+| 1 | 1 | 0 | 0 | 0 |
+| 2 | 0 | 1 | 0 | 0 |
+| 3 | 1 | 1 | 0 | 0 |
+| 4 | 0 | 0 | 1 | 0 |
+| 5 | 1 | 0 | 1 | 0 |
+| 6 | 0 | 1 | 1 | 0 |
+| 7 | 1 | 1 | 1 | 0 |
+| 8 | 0 | 0 | 0 | 1 |
+| 9 | 1 | 0 | 0 | 1 |
+| 10 | 0 | 1 | 0 | 1 |
+| 11 | 1 | 1 | 0 | 1 |
 
-Read sensor 0:
+For channel 5, the pin values read left to right are **1, 0, 1, 0**. The library
+uses an explicit lookup table with this order. Pins are written sequentially;
+the ADC is read only after all four writes and the settling delay.
 
-```cpp
-int16_t value = PerseusS3.readLineSensor(0);
-```
+Channels 12–15 exist on the 16-channel multiplexer but are outside this library's
+12-sensor interface. An incorrect selector-pin order can accidentally select one
+of those inputs. For example, swapping physical S0 and S3 maps requested channel
+5 onto multiplexer channel 12.
 
-Read sensor 5:
+## Reading line sensors
 
 ```cpp
 int16_t value = PerseusS3.readLineSensor(5);
 ```
 
-Valid indexes are:
+Each valid call follows this sequence:
 
-```text
-0 ... 11
-```
+1. Write the channel's S0–S3 selector values.
+2. Wait `MUX_SETTLE_US` (**100 µs**).
+3. Take and discard one ADC conversion.
+4. Wait `ADC_RECOVERY_US` (**10 µs**).
+5. Take and return a fresh ADC conversion.
 
-An invalid index returns:
+Both constants are in microseconds. The discarded sample is not averaged into
+the returned value. This sequence also runs when reading the same channel again.
+The delay values are starting points that require verification with the actual
+sensor output impedance, multiplexer and wiring. They cannot correct a floating
+enable pin or an incorrect connection.
 
-```text
--1
-```
+Read the multiplexer from one task at a time. Another task changing the selector
+pins during a read can change which sensor is measured.
 
-After changing the multiplexer channel, the library waits approximately:
+### Sensor example
 
-```text
-10 µs
-```
-
-before performing the ADC measurement to allow the multiplexer output and ADC input to settle.
-
----
-
-# ADC Resolution
-
-Configure the ADC reading resolution:
-
-```cpp
-PerseusS3.setAdcResolution(12);
-```
-
-The library accepts values from:
-
-```text
-1 ... 15 bits
-```
-
-| Resolution | Nominal Digital Range |
-|---:|---:|
-| 8 bit | 0–255 |
-| 10 bit | 0–1023 |
-| 12 bit | 0–4095 |
-| 15 bit | 0–32767 |
-
-Changing ADC resolution changes the digital representation of the analog measurement.
-
-It does not change the optical sensitivity of the physical line sensor.
-
----
-
-## Line Sensor Example
+Connect E/EN to GND and confirm the default pins before running this example.
+Open Serial Monitor at **115200 baud**.
 
 ```cpp
 #include <Arduino.h>
 #include <PerseusS3.h>
 
 void setup() {
-
     Serial.begin(115200);
-
     PerseusS3.beginLineSensors();
     PerseusS3.setAdcResolution(12);
 }
 
 void loop() {
-
-    for (uint8_t i = 0; i < 12; i++) {
-
-        int16_t value = PerseusS3.readLineSensor(i);
-
-        Serial.print("S");
-        Serial.print(i);
+    for (uint8_t channel = 0; channel < 12; ++channel) {
+        int16_t value = PerseusS3.readLineSensor(channel);
+        Serial.print("CH");
+        Serial.print(channel);
         Serial.print(": ");
         Serial.print(value);
         Serial.print("  ");
     }
-
     Serial.println();
-
     delay(100);
 }
 ```
 
----
+### Troubleshooting unstable readings
 
-# API Reference
-
-| Method | Description |
+| Symptom | Check first |
 |---|---|
-| `beginLeft()` | Initialize the left motor driver |
-| `beginRight()` | Initialize the right motor driver |
-| `runLeft(int16_t pwm)` | Control the left motor with signed PWM |
-| `runRight(int16_t pwm)` | Control the right motor with signed PWM |
-| `setLeftInverted(bool)` | Enable or disable left motor inversion |
-| `setRightInverted(bool)` | Enable or disable right motor inversion |
-| `beginLineSensors(...)` | Initialize the line-sensor multiplexer |
-| `setAdcResolution(uint8_t bits)` | Configure ADC reading resolution |
-| `readLineSensor(uint8_t index)` | Read one line-sensor channel |
-| `reverseLeft()` | Compatibility method for enabling left inversion |
-| `reverseRight()` | Compatibility method for enabling right inversion |
-| `linebegin(...)` | Compatibility alias for `beginLineSensors(...)` |
-| `linegetState(index)` | Compatibility alias for `readLineSensor(index)` |
+| Large, random jumps on a stationary surface | E/EN held LOW, common ground and ADC/common connection |
+| Some channels fluctuate while others are stable | Selector GPIO order, sensor connections and accidentally selected unused inputs |
+| One channel is stable but scans are unstable | Verify wiring, then compare longer settling times and successive conversions |
+| The wrong channel consistently responds to a physical sensor | Physical sensor numbering and S0–S3 wiring |
+| Instability appears when motors run | Sensor supply and ground noise from the motor system |
 
----
+First test with motors off and the sensor array stationary on a uniform surface.
+Compare repeated reads of one channel with a full scan. Black/white polarity and
+thresholds depend on the sensor circuit; determine them from stable measurements.
+Confirm the multiplexer supply and input-logic requirements for its exact part
+number, and keep the signal reaching the ESP32 ADC within its supported range.
 
-# Important Electrical Notes
+## ADC resolution
 
-The PerseusS3 GPIO logic level is **3.3 V**.
-
-Do not connect a signal greater than 3.3 V directly to an ESP32-S3 GPIO pin.
-
-The board maximum input voltage and the maximum voltage rating of an individual IC are not the same specification. Although the MP6612D motor driver itself supports operation up to 40 V, the specified PerseusS3 board supply range is **4–35 V**.
-
-The **5 A motor-driver rating** is a continuous-current specification under suitable thermal conditions.
-
-The **14.5 A OCP value** is the minimum hardware over-current protection threshold with `OC_ADJ = GND`. It is not a recommended operating current and must not be treated as the motor driver's continuous-current capability.
-
-High-current motor operation produces significant heat. Available continuous current depends on PCB temperature, ambient temperature, airflow, supply voltage, duty cycle, and motor load.
-
----
-
-# Examples
-
-Example sketches are included in:
-
-```text
-examples/
-├── BasicMotorControl/
-│   └── BasicMotorControl.ino
-└── BasicLineSensor/
-    └── BasicLineSensor.ino
+```cpp
+PerseusS3.setAdcResolution(12);
 ```
 
----
+The argument is clamped to **1–15 bits** so that valid results fit in the positive
+range of `int16_t`, leaving `-1` available for an invalid sensor index.
 
-# Compatibility
+| Requested return width | Nominal numeric range |
+|---:|---:|
+| 8 bits | 0–255 |
+| 10 bits | 0–1023 |
+| 12 bits | 0–4095 |
+| 15 bits | 0–32767 |
 
-| Parameter | Support |
+The ESP32-S3 has a native 12-bit ADC. Choosing a wider return value scales the
+number; it does not create additional measurement accuracy or change the sensor's
+optical sensitivity. This method calls the core's `analogReadResolution()` and
+affects other `analogRead()` calls too. Keep that shared setting within the
+library's supported range while using `readLineSensor()`.
+
+## API reference
+
+| Method | Behavior |
 |---|---|
-| Board | PerseusS3 |
-| MCU | ESP32-S3 |
-| Framework | Arduino |
-| Architecture | ESP32 |
-| Arduino IDE | Supported |
-| PlatformIO | Supported |
+| `beginLeft()` | Initialize left motor PWM and wake its driver on success |
+| `beginRight()` | Initialize right motor PWM and wake its driver on success |
+| `runLeft(int16_t pwm)` | Apply a signed left PWM command; zero brakes |
+| `runRight(int16_t pwm)` | Apply a signed right PWM command; zero brakes |
+| `setLeftInverted(bool inverted)` | Set left inversion; effective on the next run command |
+| `setRightInverted(bool inverted)` | Set right inversion; effective on the next run command |
+| `reverseLeft()` | Toggle left inversion on every call |
+| `reverseRight()` | Toggle right inversion on every call |
+| `beginLineSensors(s0, s1, s2, s3, inputPin)` | Initialize selectors and ADC pin; all arguments have defaults |
+| `readLineSensor(uint8_t index)` | Return a raw sensor reading for 0–11, or `-1` for an invalid index |
+| `setAdcResolution(uint8_t bits)` | Set the shared ADC return width, clamped to 1–15 |
+| `linebegin(s0, s1, s2, s3, inputPin)` | Compatibility alias for `beginLineSensors()` with the same defaults |
+| `linegetState(uint8_t index)` | Compatibility alias for `readLineSensor()` |
 
----
+## Examples and repository structure
 
-# Repository Structure
+The two basic examples are included as Arduino sketches. The complete inversion
+example is also shown above.
 
 ```text
 PerseusS3/
 ├── src/
 │   ├── PerseusS3.cpp
 │   └── PerseusS3.h
-│
 ├── examples/
-│   ├── MotorControl/
-│   └── LineSensor/
-│
-├── Images/
-│   └── PerseusForge.png
-│
+│   ├── BasicMotorControl/
+│   │   └── BasicMotorControl.ino
+│   └── BasicLineSensor/
+│       └── BasicLineSensor.ino
 ├── library.properties
 ├── README.md
 └── LICENSE.md
 ```
 
----
+The README image is loaded from the repository's `Images/PerseusForge.png`.
+It is not required to compile or use the library.
 
-# License
+## License
 
 Copyright 2026 Davit Lanjuni.
 
