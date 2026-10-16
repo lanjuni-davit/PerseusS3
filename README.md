@@ -1,75 +1,171 @@
-![PerseusS3](https://raw.githubusercontent.com/lanjuni-davit/PerseusS3/master/Images/PerseusForge.png)
-
 # PerseusS3
 
-Arduino library for the **PerseusS3 robotics development board**, based on the
-ESP32-S3. It provides signed PWM motor control, direction inversion, and readings
-from a 12-channel analog line-sensor interface.
+Arduino library for the **Perseus S3™ robotics development board** by
+**Perseus Forge™**, model **PF-PS3**, based on the ESP32-S3.
+The supplied library documentation describes signed PWM motor control,
+direction inversion, and a 12-channel analog line-sensor interface.
+
+Hardware specifications and board setup below follow the **Perseus S3 User
+Manual, Rev 0.3, 10 October 2026**, supplied as `PerseusS3Datasheet.docx`.
+Section references refer to that manual. Library API descriptions, default GPIO
+assignments, examples and reported build results are retained from the supplied
+library README; the manual does not independently verify those implementation
+details. The library source and physical hardware were not tested for this
+documentation update.
 
 ## Hardware overview
 
-| Specification | PerseusS3 |
+| Specification | Perseus S3 |
 |---|---|
+| Brand / model | Perseus Forge™ / PF-PS3 |
 | MCU module | ESP32-S3-MINI-1U-N8 |
-| CPU | Dual-core Xtensa LX7, up to 240 MHz |
-| Flash | 8 MB |
-| Wireless | 2.4 GHz Wi-Fi and Bluetooth Low Energy |
-| GPIO logic level | 3.3 V |
-| Specified board input voltage | 4–35 V |
-| On-board regulator | 3.3 V, up to 2 A |
-| Motor channels | Two brushed DC motors |
-| Motor drivers | MP6612D |
-| Line-sensor channels used by the library | 12, indexed 0–11 |
-| USB connector | USB Type-C |
-| Approximate dimensions | 80 × 27 × 9.9 mm |
-| Framework | Arduino for ESP32 |
+| Documented CPU frequency setting | 240 MHz in the Arduino configuration |
+| Flash | 8 MB (64 Mb) |
+| Integrated PSRAM | None; keep PSRAM disabled |
+| Wireless | 2.4 GHz Wi-Fi and Bluetooth 5.0 Low Energy (BLE); Bluetooth Classic is not supported |
+| Antenna | Compatible external 2.4 GHz antenna required for the MINI-1U module |
+| GPIO and UART logic level | 3.3 V |
+| External board input / VIN | 4.5 to 30 V DC |
+| Onboard regulator | LMR51430YFDDCR buck converter; regulated 3.3 V |
+| Regulator output capacity | 3 A total, shared by onboard electronics and external 3.3 V loads |
+| Motor channels | Two reversible brushed DC motor channels |
+| Motor drivers | Two MP6612D H-bridge drivers |
+| Motor-driver continuous current | 5 A per driver |
+| USB connector | USB Type-C connected directly to ESP32-S3 native USB |
+| External flashing interface | Separate UART flasher header; 3.3 V logic; no onboard USB-to-UART bridge |
+| Onboard LED | GPIO48; not an FSPI header contact |
+| Board outline | 80 × 27 mm |
+| Overall assembled height | 11.5 mm, including components; not bare PCB thickness |
+| Mounting-hole centre spacing | 74 × 21 mm |
+| Mounting-hole diameter | 2.20 mm in Section 5.2 and Figure 7; see the conflicting Figure 3 label below |
+| Documented development environments | Arduino IDE 2 with esp32 by Espressif Systems; optional PlatformIO with a manufacturer-validated profile |
 
-The MP6612D is rated for up to **5 A continuous current per driver under suitable
-electrical and thermal conditions**. Actual board capability depends on cooling,
-PCB design, ambient temperature and motor load. Its **14.5 A minimum over-current
-threshold with OC_ADJ connected to GND** is a protection threshold, not a usable
-continuous-current rating.
+Source: manual Features and contents, Sections 1.1–1.2, 2.1–2.4, 3.1–3.6,
+4.1 and 5–5.2. The manual specifies a 240 MHz CPU setting; it does not state
+the CPU architecture or establish a separate maximum-frequency rating.
 
-Keep ESP32-S3 GPIO signals within **3.3 V** and share ground between the board,
-line sensors and multiplexer. The board's specified 4–35 V supply range is
-different from the voltage limits of its individual components.
+The manual rates **each motor driver at 5 A continuous**. Select the supply,
+wiring and connectors for motor startup, running current and the combined load,
+and account for thermal conditions. The **3 A regulator rating is a shared
+3.3 V output budget**, not an additional allowance entirely available to external
+loads. Neither rating is constant board power consumption. The manual does not
+provide a peak/stall-current rating or a verified overcurrent trip threshold.
+
+**Mechanical source conflict:** Figure 3 labels a mounting hole `R=2.2mm`,
+whereas Section 5.2 and Figure 7 specify a **2.20 mm diameter**. Confirm the
+dimension with support before manufacturing a dimension-critical mount; the
+conflict has not been silently corrected.
+
+The **12 line-sensor channels, indexed 0–11**, are a feature described by the
+supplied library README. The board manual does not document an onboard
+line-sensor array, a multiplexer part or its wiring. Do not treat the library's
+sensor interface as a confirmed onboard hardware feature.
+
+### Power and connection precautions
+
+- Apply **4.5 to 30 V DC only to VIN and GND**, observing polarity. That range
+  does not apply to USB VBUS, GPIO or the regulated 3.3 V rail.
+- Use **3.3 V digital logic** and a common ground. Do not apply 5 V logic or
+  true RS-232 signals, and do not drive GPIO on an unpowered board. The manual
+  does not give a numeric ADC input range; 3.3 V logic is not an ADC calibration
+  or input-range specification.
+- Use VIN for motor operation. **Do not power motors from USB or an external
+  flasher. Disconnect motor leads before USB programming or UART flashing.**
+- Use **one board power source at a time**. Until source isolation is verified,
+  use USB with VIN disconnected, or VIN with the board USB cable disconnected.
+- For an external UART flasher, use 3.3 V logic, connect GND to GND, flasher TX
+  to board RX and flasher RX to board TX. Power the target through VIN with the
+  board USB cable and motor leads disconnected. **Leave flasher VCC disconnected.**
+- Keep external supply outputs disconnected from the 3.3 V rail. Disconnect
+  every power source before changing wiring or reconnecting motors.
+- Preserve boot, native USB, memory, LED and motor-library assignments. GPIO0,
+  GPIO3, GPIO45 and GPIO46 are strapping pins; GPIO19/20 are USB D-/D+;
+  GPIO48 controls the onboard LED. Follow actual PCB labels.
+- Attach a compatible external antenna with power disconnected before using
+  wireless functions. Keep the board dry, handle it by the edges on an antistatic
+  surface, avoid conductive mounting contact and connector strain, and stop for
+  unusual heat, odor, damage or repeated supply faults.
+- Do not infer USB Power Delivery, charging, board host mode, high-speed USB or
+  a higher supply voltage from the Type-C connector. Do not change eFuses or
+  permanent security settings during routine setup.
+
+Source: manual Sections 2.1–2.4, 3.3, 3.5–3.6, 4.3, 5–5.1 and 6.
 
 ## Installation
 
 ### Arduino IDE
 
-1. Install **esp32 by Espressif Systems** through Boards Manager.
-2. Download the library ZIP and use **Sketch > Include Library > Add .ZIP Library**.
-3. Select the appropriate ESP32-S3 board profile and its flash/USB settings.
-   The module documented above has 8 MB flash.
-4. Include the library in your sketch:
+1. Install **Arduino IDE 2**.
+2. In Preferences, add this stable package URL to **Additional Boards Manager URLs**:
+
+   ```text
+   https://espressif.github.io/arduino-esp32/package_esp32_index.json
+   ```
+
+3. In Boards Manager, install **esp32 by Espressif Systems** and record its version.
+4. Select **ESP32S3 Dev Module** when no Perseus Forge board profile is supplied.
+   Apply the manual's settings below.
+5. Download the library ZIP and use **Sketch > Include Library > Add .ZIP Library**.
+6. Include the library in your sketch:
 
 ```cpp
 #include <Arduino.h>
 #include <PerseusS3.h>
 ```
 
+| Setting | Selection from manual Section 4.1 |
+|---|---|
+| Board | ESP32S3 Dev Module when no manufacturer profile is supplied |
+| CPU frequency | 240 MHz |
+| Flash mode and frequency | QIO, 80 MHz |
+| Flash size | 8 MB (64 Mb) |
+| PSRAM | Disabled |
+| Partition scheme | An 8 MB scheme matching the application; the example `8M with spiffs` reserves 3 MB for the application and 1.5 MB for SPIFFS |
+| USB Mode | Hardware CDC and JTAG |
+| USB CDC On Boot | Enabled for Serial over native USB; Disabled for the manual's sketch over UART0 via an external flasher |
+| Upload Mode | UART0 / Hardware CDC |
+| USB DFU and USB Firmware MSC | Disabled for the manual's example |
+| Erase All Flash Before Sketch Upload | Disabled for routine uploads |
+| Port | Current device port; recheck after reset |
+| Serial Monitor | 115200 baud for the supplied examples |
+| External UART upload speed | Start at 115200 baud; increase only if the flasher and connection support it |
+
+The manual's screenshot shows `COM7` and upload speed `921600`; these do not
+replace the current-port selection or the qualified external-UART recommendation.
+
+For the first upload, disconnect motors and external circuits. Follow the power
+rules above, verify the sketch, select the current port, close competing terminals
+and upload. Press EN if a reset is required, then recheck the port. Match the USB
+CDC setting to the console being monitored. Use the manual's serial-only sketch
+for the initial board check before running motor or sensor examples.
+
 When replacing an older installation, avoid keeping multiple copies of the
 library in the Arduino libraries folder.
+
+### External UART recovery
+
+With the UART wiring and VIN power arrangement described above, hold BOOT,
+press and release EN while BOOT remains held, then release BOOT and upload.
+After upload, release BOOT and press EN to run the application. BOOT holds
+GPIO0 low; GPIO46 must be low or floating during downloader entry. Do not short
+unidentified pads or program eFuses to troubleshoot. A full flash erase may
+remove stored data. Source: manual Section 4.3.
 
 ### PlatformIO
 
 For a local installation, put the library folder at `lib/PerseusS3/` inside your
 PlatformIO project. Keep its `src/` folder and `library.properties` intact.
 
-This example configuration uses a generic ESP32-S3 profile with 8 MB flash:
+Use the **Espressif 32** platform with a **manufacturer-validated board profile**,
+as required by manual Section 4.4. Obtain the approved platform/framework
+versions, board identifier or board JSON, partition file and console flags.
+Custom board JSON definitions can be placed in the project's `boards/` directory.
 
-```ini
-[env:perseuss3]
-platform = espressif32@7.0.1
-board = esp32-s3-devkitc-1
-framework = arduino
-monitor_speed = 115200
-```
-
-This is a generic build profile, not a custom PerseusS3 board definition. Verify
-the board and USB settings against your hardware. Put your sketch in `src/main.cpp`
-and include both `Arduino.h` and `PerseusS3.h`.
+The manual does not supply those exact configuration values, so this README
+does not present a generic ESP32-S3 profile or a pinned platform version as a
+validated Perseus S3 configuration. Confirm memory, console and upload settings
+before substituting another profile. Put your sketch in `src/main.cpp`, include
+both `Arduino.h` and `PerseusS3.h`, and use **115200 baud** for the monitor.
 
 To fetch a copy from GitHub instead, add this to the environment:
 
@@ -83,6 +179,10 @@ selecting an older remote copy while testing a corrected local copy. Pin a commi
 or tag when you need a reproducible dependency.
 
 ## ESP32 core compatibility
+
+The following compatibility behavior is reported by the supplied library README.
+The board manual does not specify library support for particular ESP32 core
+versions, and the implementation was not inspected for this update.
 
 PWM configuration selects the Arduino-ESP32 API at compile time:
 
@@ -98,9 +198,12 @@ On core 2.x, motor control reserves **LEDC channels 0 and 1 and their shared
 timer**. On core 3.x, the core allocates channels automatically. Other code must
 not reconfigure the motor pins or their PWM timers after initialization.
 
-### Verification status
+### Reported library verification status
 
-| Check | Result |
+These results are carried over from the supplied README. They were not rerun
+or independently confirmed during the datasheet-based documentation correction.
+
+| Reported check | Reported result |
 |---|---|
 | Library and both basic examples with real ESP32-S3 GCC and core 2.0.17 | Compiled into object files |
 | Direction-inversion example with core 2.0.17 | Compiled into an object file |
@@ -109,13 +212,26 @@ not reconfigure the motor pins or their PWM timers after initialization.
 | Complete local PlatformIO build | Blocked by a local Windows compiler subprocess error |
 | Physical motor and sensor measurements | Still required |
 
-The included workflow defines example builds for cores 2.0.17, 3.0.7 and 3.3.12,
-plus regression tests. Those workflow runs and runtime tests are not claimed as
+The supplied README reports a workflow defining example builds for cores
+2.0.17, 3.0.7 and 3.3.12, plus regression tests. The workflow was not inspected
+for this update. Those workflow runs and runtime tests are not claimed as
 completed by the checks above.
 
 ## Motor control
 
-### Motor GPIO assignments
+### Motor GPIO assignments reported by the library
+
+The table below is retained from the supplied library README. **The board
+manual does not list these motor GPIO numbers or confirm the SLP mapping.**
+It identifies MP6612D DIR and ENBL controls and instructs users to let the supplied
+motor library configure its signals. Confirm that the installed library and PCB
+revision match before relying on this table; do not manually reassign the pins.
+The timing, initialization, braking and inversion descriptions that follow are
+also library-reported behavior, not behavior established by the board manual.
+
+Connect motors to the output pads for the corresponding left or right driver
+with all power disconnected. Use VIN and observe the power and current limits
+in [Hardware overview](#hardware-overview). Source: manual Section 3.4.
 
 | Signal | Left motor | Right motor |
 |---|---:|---:|
@@ -262,6 +378,12 @@ void loop() {
 
 ## Line-sensor wiring
 
+This section describes the **external sensor/multiplexer arrangement in the
+supplied library README**. The board manual does not identify a multiplexer
+part, enable polarity, channel count or supported sensor circuit. Confirm the
+exact external component and wiring before applying the E/EN instructions below;
+they are conditional on the active-LOW multiplexer arrangement described here.
+
 The multiplexer connects one sensor at a time to the ESP32 ADC. The library
 reads **channels 0–11**. An invalid index returns `-1` without changing the
 selector pins or reading the ADC.
@@ -277,6 +399,15 @@ selector pins or reading the ADC.
 | Common analog output to ADC | GPIO 7 |
 | E / EN, active LOW | Connect to GND for continuous operation |
 | GND | Common ground with ESP32 and sensors |
+
+The board manual confirms that GPIO33–GPIO37 are exposed on the **FSPI header**
+and that GPIO7 has the **ADC1_CH6** alternate function. This supports locating
+the contacts; it does not verify the library's multiplexer connections. The
+default selector assignment uses GPIO33–GPIO36, so those contacts must not be
+assigned to an SPI/FSPI peripheral at the same time. The custom example below
+also uses GPIO37. Preserve the manual's reserved signals and verify the actual
+PCB labels. Source: manual Sections 3.3 and 5; the shared-pin restriction follows
+from comparing that map with the library's assignments.
 
 **Do not leave the multiplexer E/EN pin floating.** LOW enables the selected
 channel; HIGH disconnects all channels. An unconnected enable input can disable
@@ -419,13 +550,23 @@ range of `int16_t`, leaving `-1` available for an invalid sensor index.
 | 12 bits | 0–4095 |
 | 15 bits | 0–32767 |
 
-The ESP32-S3 has a native 12-bit ADC. Choosing a wider return value scales the
-number; it does not create additional measurement accuracy or change the sensor's
-optical sensitivity. This method calls the core's `analogReadResolution()` and
-affects other `analogRead()` calls too. Keep that shared setting within the
-library's supported range while using `readLineSensor()`.
+The return-width limits and nominal numeric ranges above are library-reported
+behavior. The supplied board manual maps ADC channels but does not specify native
+ADC resolution, input-voltage range, attenuation or calibration. A wider numeric
+return value is not evidence of additional measurement accuracy or increased
+sensor optical sensitivity.
+
+The supplied README states that this method calls the core's
+`analogReadResolution()` and affects other `analogRead()` calls too. Keep that
+shared setting within the library's supported range while using
+`readLineSensor()`. Confirm the implementation and compatible core version before
+relying on the described scaling or clamping behavior.
 
 ## API reference
+
+This API table is retained from the supplied library README. Function signatures
+and behavior require the matching library implementation; they are not an API
+listing from the board manual.
 
 | Method | Behavior |
 |---|---|
@@ -450,6 +591,11 @@ example is also shown above.
 
 ```text
 PerseusS3/
+|
+|
+├── Manual/
+│   ├── AiManual.md
+│   └── UserManual.md
 ├── src/
 │   ├── PerseusS3.cpp
 │   └── PerseusS3.h
@@ -465,6 +611,24 @@ PerseusS3/
 
 The README image is loaded from the repository's `Images/PerseusForge.png`.
 It is not required to compile or use the library.
+
+## Hardware documentation and support
+
+Hardware authority: **Perseus S3 User Manual, Rev 0.3, 10 October 2026**,
+supplied as `PerseusS3Datasheet.docx`. The manual identifies the board as
+**Perseus S3™**, model **PF-PS3**, by **Perseus Forge™**. Perseus Forge™ is
+the intellectual property of Davit Lanjuni.
+
+Support and the supplied motor-control library: **infoperseusam@gmail.com**.
+Include the unit code if supplied, a photograph of PCB markings, power source
+and voltage, and software versions. The documented unit-code format is
+`PF-PS3-` followed by a six-digit serial number.
+
+No external sources were consulted for this update. Where the manual does not
+confirm a library-specific claim, that distinction is stated above. The
+repository layout, dependency URL and software license are retained from
+the supplied README; the board manual does not verify them or grant a software
+license.
 
 ## License
 
