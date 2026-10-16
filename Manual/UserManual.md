@@ -1,4 +1,4 @@
-> **Conversion note (not source text).** This Markdown preserves the supplied Word document’s wording and source order. Image transcriptions and conversion notes are explicitly labelled additions. All seven original image assets are embedded, byte-for-byte, as data-URI image references at the end of this file; no companion files or network connection are needed to retain those assets. Some Markdown viewers block data-URI images; the adjacent text records remain readable. Images, line wrapping, pagination, tab stops, repeated headers/footers, Word cropping/rotation and precise drawing geometry may display differently. The source header and footer are reproduced once. Source inconsistencies and omissions have not been silently repaired.
+> **Repository edition.** This Markdown retains the converted manual text and labelled image transcriptions. Figures link to PNG files in `../Images/`, which GitHub can display. Six matching image files are available. The original unannotated front photograph for Figure 1 is missing, so the annotated front view used for Figure 3 is also shown there and explicitly labelled. Keep the `Manual/` and `Images/` folders together for offline viewing. Source conflicts remain documented; image placement and Markdown presentation have been corrected for this repository.
 
 <!-- SOURCE HEADER -->
 PERSEUS FORGE™　Perseus S3™
@@ -12,7 +12,9 @@ ESP32 S3 Development Board
 <!-- SOURCE B002 -->
 Perseus Forge™
 
-![Perseus S3 front view][source-image-1]
+![Perseus S3 front view, annotated substitute][source-image-1]
+
+> **Figure 1 image substitution:** the original plain front-view photograph is not in this repository. This is the annotated front-view image also used in Figure 3. The transcription below describes the original photograph.
 
 <details>
 <summary>Image 1: labelled transcription and conversion observations</summary>
@@ -23,7 +25,7 @@ Perseus Forge™
 
 Readable prominent markings include `PERSEUS FORGE`, `Made on Earth for all beings`, `UART`, `U1`, `IO48`, `ESPRESSIF`, `ESP32-S3-MINI-1U`, `CE`, `CMIIT ID:2022DP8901(M)`, `MCN8`, and the module's Chinese company-name marking `乐鑫信息科技（上海）股份有限公司` (line breaks on the shield). A square machine-readable code is present; its payload was not decoded. The two large capacitor tops show `ROQANG`, `47`, `50V`, and `RVT`, with nearby `+` polarity marks. Small passive-component markings include visible `0`, `100`, `221`, and `132`; not every tiny marking is legible enough for a reliable transcription. These photographic component markings do not establish complete-board voltage or current limits. In particular, `50V` is a capacitor marking, not the permitted VIN voltage. Faint driver-package laser text cannot be reliably transcribed from the supplied photograph; the body's identified driver part is MP6612D.
 
-The original image is preserved without changing its pixels in the human Markdown. Photographic microprint, the undecoded code, and exact placement cannot be fully replaced by this text description.
+The original plain photograph is unavailable in this repository. The annotated substitute is linked above. Photographic microprint, the undecoded code, and exact placement cannot be fully replaced by this text description.
 
 **Original Word alternative text:** Perseus S3 hardware illustration. See the adjacent caption and any review note for limits or corrections.
 
@@ -36,7 +38,7 @@ Figure 1 Perseus S3 front view
 ### Description
 
 <!-- SOURCE B006 -->
-### Perseus S3™ is an ESP32-S3-based development board designed by Perseus Forge™ for robotics prototyping, embedded systems education, and competitive robotics. Featuring integrated 2.4 GHz Wi-Fi and Bluetooth 5.0 Low Energy (BLE) connectivity, the board enables wireless communication, remote control, and IoT applications. This user manual provides essential information on board identification, power requirements, safety precautions, hardware interfaces, programming, and troubleshooting procedures.
+Perseus S3™ is an ESP32-S3-based development board designed by Perseus Forge™ for robotics prototyping, embedded systems education, and competitive robotics. Featuring integrated 2.4 GHz Wi-Fi and Bluetooth 5.0 Low Energy (BLE) connectivity, the board enables wireless communication, remote control, and IoT applications. This user manual provides essential information on board identification, power requirements, safety precautions, hardware interfaces, programming, and troubleshooting procedures.
 
 <!-- SOURCE B007 -->
 ### Ownership notice
@@ -649,19 +651,19 @@ Figure 7 Board dimensions in millimetres
 ## 6 Safety precautions
 
 <!-- SOURCE B154 -->
-•  Use VIN within 4.5 to 30 V DC for motor operation. Do not power motors from USB or an external flasher. Disconnect all sources before rewiring, check polarity and remove loose conductive objects.
+- Use VIN within 4.5 to 30 V DC for motor operation. Do not power motors from USB or an external flasher. Disconnect all sources before rewiring, check polarity and remove loose conductive objects.
 
 <!-- SOURCE B155 -->
-•  Use 3.3 V logic for GPIO and UART signals. Do not apply 5 V logic or use a true RS-232 voltage interface. Keep external supply outputs disconnected from the 3.3 V rail and use only one board power source at a time.
+- Use 3.3 V logic for GPIO and UART signals. Do not apply 5 V logic or use a true RS-232 voltage interface. Keep external supply outputs disconnected from the 3.3 V rail and use only one board power source at a time.
 
 <!-- SOURCE B156 -->
-•  Handle by the edges on an antistatic surface. Keep the board dry; prevent conductive mounting parts from touching circuitry.
+- Handle by the edges on an antistatic surface. Keep the board dry; prevent conductive mounting parts from touching circuitry.
 
 <!-- SOURCE B157 -->
-•  Do not strain USB or antenna connectors. Confirm antenna installation before transmission. Stop immediately for excessive heat, odor or damage.
+- Do not strain USB or antenna connectors. Confirm antenna installation before transmission. Stop immediately for excessive heat, odor or damage.
 
 <!-- SOURCE B158 -->
-•  Use the supplied motor-control library, observe reserved GPIO assignments and retain a working recovery sketch. Do not program eFuses or permanent security settings during routine setup.
+- Use the supplied motor-control library, observe reserved GPIO assignments and retain a working recovery sketch. Do not program eFuses or permanent security settings during routine setup.
 
 <!-- SOURCE B159 -->
 ## 7 Manufacturer information
@@ -739,7 +741,17 @@ The following official component and software references support the functional 
 - The body ends with reference [13]. The contents table mentions Section 9 / revision history, but no Section 9 body exists. References [14] and [15] are cited in Sections 3.4 but their bibliographic entries are absent. They have not been fabricated.
 - No substantive footnotes, endnotes, comments, native equations, tracked changes, text boxes, or appendices occur in the supplied package. Footnote/endnote parts contain only separator placeholders.
 - Source paragraph text and table-cell text were compared with the converted source blocks. The nine-line C++ example was checked character-for-character. Trademarks, copyright signs, source spelling, repeated statements and conflicting labels are retained.
-- The original PNG bytes are embedded unchanged. All images were visually inspected; figure-only specifications, warnings, screenshot settings and readable labels are transcribed. Very small or obscured photographic markings, the undecoded machine-readable code and exact graphical geometry cannot be completely conveyed by a textual description. The retained originals preserve those pixels.
+- This repository edition links to the six available PNG files without changing them. Figure 1 reuses the annotated front image because the original plain photograph is missing. The converted figure transcriptions are retained; very small or obscured photographic markings, undecoded machine-readable content and exact graphical geometry cannot be fully conveyed in text. The original Word document is not included, so the earlier conversion checks cannot be independently repeated from this repository.
 - The Word footer contains PAGE and NUMPAGES fields with saved results `1 / 1`; those saved results are preserved, not asserted to be a verified page count. The metadata page count is also 1. A Word page render could not be produced because native Word automation returned access denied and the bundled runtime supplies no LibreOffice renderer on Windows. Thus original page pagination, repeated header/footer placement, clipping, and page-by-page layout could not be independently verified. The full underlying document content was still inspected.
-- The source applies a Heading 2 style to the whole Description paragraph. That style is represented as a Markdown subheading without rewriting the paragraph. Empty spacer paragraphs and Word-specific typography are not reproduced as fixed page layout.
+- The source applies a heading style to the whole Description paragraph. This repository edition displays that text as an ordinary paragraph without changing its wording. Empty spacer paragraphs and Word-specific typography are not reproduced as fixed page layout.
 - The AI companion explicitly records source conflicts: Figure 2 power/module/current labels versus body guidance, Figure 3 hole radius versus Section 5.2/Figure 7 diameter, screenshot upload speed versus the qualified UART recommendation, and missing references/revision history. The source's original statements remain unchanged here.
+
+
+<!-- Paths are relative to this Markdown file, including the capital I in Images. -->
+[source-image-1]: ../Images/PerseusS3PINOUT.png
+[source-image-2]: ../Images/PerseusS3PowerTree.png
+[source-image-3]: ../Images/PerseusS3PINOUT.png
+[source-image-4]: ../Images/PerseusS3Bottom.png
+[source-image-5]: ../Images/PerseusS3Setup.png
+[source-image-6]: ../Images/PerseusS3GPIO.png
+[source-image-7]: ../Images/PerseusS3Drawing.png
